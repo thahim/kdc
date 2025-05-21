@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Karachi Area Distance and Driving Time Finder</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      transition: all 3s ease;
+    }
+    header {
+      background-color: #00796b;
+      color: white;
+      padding: 25px 20px;
+      font-size: 28px;
+      border-radius: 8px;
+      animation: fadeIn 10s ease-in-out;
+      box-shadow: 0 4px 12px rgba(0, 121, 107, 0.4);
+    }
+    select, button {
+      padding: 14px 20px;
+      margin: 15px;
+      font-size: 17px;
+      border-radius: 10px;
+      border: 2px solid #00796b;
+      background: white;
+      color: #00796b;
+      cursor: pointer;
+      transition: all 2.5s ease;
+      min-width: 200px;
+    }
+    select:hover, button:hover {
+      background: #00796b;
+      color: white;
+    }
+    #result {
+      font-weight: 600;
+      margin-top: 30px;
+      font-size: 20px;
+      color: #004d40;
+      min-height: 48px;
+      animation: fadeIn 10s ease-in-out;
+    }
+    iframe {
+      margin-top: 30px;
+      width: 100%;
+      max-width: 900px;
+      height: 450px;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      animation: fadeInMap 15s ease-in-out;
+      transition: all 5s ease;
+    }
+    footer {
+      background-color: #004d40;
+      color: white;
+      padding: 20px 30px;
+      margin-top: 50px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      border-radius: 8px;
+      animation: fadeIn 12s ease-in-out;
+    }
+    footer img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 0 10px #004d40;
+      transition: transform 2s ease;
+    }
+    footer img:hover {
+      transform: scale(1.05);
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @keyframes fadeInMap {
+      from {opacity: 0; transform: translateY(40px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+  <header>Karachi Area Distance and Driving Time Finder</header>
+
+  <select id="area1"></select>
+  <select id="area2"></select>
+  <button onclick="calculateDistance()">Calculate Distance</button>
+
+  <div id="result"></div>
+
+  <iframe id="map" allowfullscreen loading="lazy"></iframe>
+
+  <footer>
+    <div>Developed by Abdul Salam Thahim</div>
+    <img src="https://raw.githubusercontent.com/thahim/ast/main/images/IMG-20250516-WA0027.jpg" alt="Abdul Salam Thahim" />
+  </footer>
+
+  <script>
+    const areas = {
+      "Bahria Town Karachi": { lat: 25.0304, lon: 67.2561, landmark: "Main Gate" },
+      "Kathor": { lat: 25.0496, lon: 67.3506, landmark: "Kathor Market" },
+      "Clifton": { lat: 24.8138, lon: 67.0305, landmark: "Dolmen Mall" },
+      "Saddar": { lat: 24.8607, lon: 67.0011, landmark: "Empress Market" },
+      "Gulshan-e-Iqbal": { lat: 24.9202, lon: 67.0892, landmark: "Expo Center" },
+      "Malir": { lat: 24.8928, lon: 67.2066, landmark: "Malir Court" },
+      "Korangi": { lat: 24.8302, lon: 67.1391, landmark: "Brookes Chowrangi" },
+      "North Nazimabad": { lat: 24.9500, lon: 67.0300, landmark: "Hyderi Market" },
+      "Lyari": { lat: 24.8601, lon: 66.9961, landmark: "Lyari Expressway" },
+      "Landhi": { lat: 24.8431, lon: 67.2062, landmark: "Landhi Railway Station" }
+    };
+
+    const area1Select = document.getElementById("area1");
+    const area2Select = document.getElementById("area2");
+
+    for (const area in areas) {
+      const option1 = document.createElement('option');
+      option1.value = area;
+      option1.text = area;
+      area1Select.add(option1);
+
+      const option2 = document.createElement('option');
+      option2.value = area;
+      option2.text = area;
+      area2Select.add(option2);
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of Earth in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function calculateDistance() {
+      const area1 = area1Select.value;
+      const area2 = area2Select.value;
+
+      const coord1 = areas[area1];
+      const coord2 = areas[area2];
+
+      if (!coord1 || !coord2) {
+        document.getElementById("result").innerText = "Please select valid areas.";
+        return;
+      }
+
+      const distance = haversine(coord1.lat, coord1.lon, coord2.lat, coord2.lon);
+      const avgSpeed = 40; // average speed in km/h
+      const time = distance / avgSpeed;
+
+      document.getElementById("result").innerText =
+        `Distance from ${area1} (${coord1.landmark}) to ${area2} (${coord2.landmark}) is ` +
+        `${distance.toFixed(2)} km. Estimated driving time: ${(time * 60).toFixed(0)} minutes.`;
+
+      const map = document.getElementById("map");
+      // IMPORTANT: Replace YOUR_API_KEY with your real Google Maps Embed API key
+      map.src = `https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin=${coord1.lat},${coord1.lon}&destination=${coord2.lat},${coord2.lon}&mode=driving`;
+    }
+  </script>
+</body>
+</html>
